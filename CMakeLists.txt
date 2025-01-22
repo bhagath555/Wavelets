@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Project variables
 set(LOCAL_PROJECT_NAME        "Wavelets")
 set(LOCAL_PROJECT_VERSION     "0.0.1")
-set(LOCAL_PROJECT_DESCRIPTION "Description")
+set(LOCAL_PROJECT_DESCRIPTION "Wavelet transformation of images")
 
 # Header files (relative to "include" directory)
 set(HEADERS
@@ -42,12 +42,22 @@ project(${LOCAL_PROJECT_NAME}
         DESCRIPTION ${LOCAL_PROJECT_DESCRIPTION}
         LANGUAGES CXX)
 
+# OPENCV package
+find_package(OpenCV REQUIRED) 
+
+
 add_executable(${LOCAL_PROJECT_NAME})
 
 list(TRANSFORM HEADERS PREPEND "include/")
 list(TRANSFORM SOURCES PREPEND "src/")
 
-target_include_directories(${LOCAL_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${LOCAL_PROJECT_NAME} PRIVATE 
+                           ${CMAKE_CURRENT_SOURCE_DIR}/include
+                           ${OpenCV_INCLUDE_DIRS})
+
+# OPENCV library linking                           
+target_link_libraries(${LOCAL_PROJECT_NAME} PRIVATE ${OpenCV_LIBS}) 
+
 target_sources(${LOCAL_PROJECT_NAME} PRIVATE ${SOURCES} ${HEADERS})
 target_compile_definitions(${LOCAL_PROJECT_NAME} PRIVATE ${DEFINES})
 target_compile_options(${LOCAL_PROJECT_NAME} PRIVATE ${OPTIONS})
