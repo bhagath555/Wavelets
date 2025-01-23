@@ -20,7 +20,9 @@ void wavelet_transfrom_1D(const vector<float>& input,
                           vector<float>& approx,
                           vector<float>& detail)
 {
-
+    if (input.empty()) {
+        throw std::invalid_argument("Input vector is empty");
+    }
     // size parameter for approx and detail -> half of input.
     size_t size = input.size() / 2;
     
@@ -43,11 +45,9 @@ void wavelet_transfrom_1D(const vector<float>& input,
  * row-wise, column-wise, and diagonal details representation.
  *
  * @param image An input vector of floating-point values.
- * @param LL A reference matrix to store approximation coefficients.
- * @param LH A reference matrix to store column-wise details.
- * @param HL A reference matrix to store row-wise details.
- * @param HH A reference matrix to store diagonal details.
- * , cv::Mat& LL, cv::Mat& LH, cv::Mat& HL, cv::Mat& HH
+ * @param level Level of wavelet transformation to be performed.
+ * 
+ * @return A cv::Mat transformed image
  */
 cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
 {
@@ -55,10 +55,12 @@ cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
     int cols = image.cols;
     cv::Mat final_trans(rows, cols, CV_32F);
 
+    if (level < 1){
+        return image;
+    }
+
     int l = 1;
     while (l <= level) {
-
-        cout << "Level " << l << endl;
         if (l > 1){
             rows = rows/2;
             cols = cols/2;
@@ -66,7 +68,6 @@ cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
         
         cv::Mat row_trans(rows, cols, CV_32F);
         cv::Mat row;
-        cout << "Row initiation" << endl;
         // Apply the transformation for rows
         for (int i = 0; i < rows; ++i){
             if (l == 1){
@@ -74,7 +75,6 @@ cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
             }
             else{
                 row = final_trans.row(i).colRange(0,cols);
-                
             }
             vector<float> rowVector(row.begin<float>(), row.end<float>());
 
@@ -88,7 +88,6 @@ cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
                 row_trans.at<float>(i, j) = approx[j];
                 row_trans.at<float>(i, j + cols / 2) = detail[j];
             }
-
         }
 
         // Apply the transformation for cols
@@ -104,26 +103,30 @@ cv::Mat wavelet_transform_2D(const cv::Mat& image, const int& level)
                 final_trans.at<float>(i, j) = approx[i];
                 final_trans.at<float>(i + rows / 2, j) = detail[i];
             }
-
         }
-
         l = l + 1; 
     }
-
-    // // Extracting approximation and details
-    // LL = final_trans(cv::Rect(0,      0, cols/2, rows /2)).clone();
-    // LH = final_trans(cv::Rect(cols/2, 0, cols/2, rows /2)).clone();
-    // HL = final_trans(cv::Rect(0, rows/2, cols/2, rows /2)).clone();
-
-    // HH = final_trans(cv::Rect(cols/2, rows/2, cols/2, rows/2)).clone();
     return final_trans;
     
 }
 
+/**
+ * @brief Performs a 1D wavelet transform on an input vector using HAAR.
+ *
+ * For a given approximations and coefficients vector, this function reconstructs the signal.
+ *
+ * @param output Reconstructed signal from approximantion and detailes vector.
+ * @param approx A reference to the vector to store approximation coefficients.
+ * @param detail A reference to the vector to store detail coefficients.
+ */
 void inverse_wavelet_transfrom_1D(vector<float>& output, 
                           const vector<float>& approx,
                           const vector<float>& detail)
 {
+    if (approx.empty() || approx.empty()) {
+        throw std::invalid_argument("approx or detail vector is empty");
+    }
+
     // size parameter of approx.
     size_t size = approx.size();
     // Adjust the size of the output signal
@@ -135,71 +138,96 @@ void inverse_wavelet_transfrom_1D(vector<float>& output,
     }
 }
 
-cv::Mat inverse_wavelet_transform_2D(cv::Mat& transformed)
+
+/**
+ * @brief Performs a multi-level 2D inverse wavelet transform on an input matrix.
+ *
+ * This function reconstructs the original image from its wavelet coefficients by
+ * iteratively applying the inverse wavelet transform to the rows and columns.
+ *
+ * @param transformed A reference to the matrix containing the transformed wavelet coefficients.
+ * @param level The number of decomposition levels to be reversed. 
+ *              It should match the number of forward transform levels applied.
+ * @return A cv::Mat object representing the reconstructed image.
+ */
+cv::Mat inverse_wavelet_transform_2D(cv::Mat& transformed, const int& level)
 {
-    int rows = transformed.rows;
-    int cols = transformed.cols;
+    int init_rows = transformed.rows;
+    int init_cols = transformed.cols;
+    cv::Mat image(init_rows, init_cols, CV_32F);
 
-    // intermediate results
-    cv::Mat intermediate(rows, cols, CV_32F);
-    cv::Mat image(rows, cols, CV_32F);
+    int l = level;
 
-    // Apply inverse transform to columns
-    for (int j = 0; j < cols; ++j) {
-        std::vector<float> colApprox(rows / 2), colDetail(rows / 2), colOutput(rows);
-        for (int i = 0; i < rows / 2; ++i) {
-            colApprox[i] = transformed.at<float>(i, j);
-            colDetail[i] = transformed.at<float>(i + rows / 2, j);
+    while (l >=1) {
+        int rows = init_rows / pow(2, l - 1);
+        int cols = init_cols / pow(2, l - 1);
+
+        cv::Mat intermediate(rows, cols, CV_32F);
+    
+        // Apply inverse transform to columns
+        for (int j = 0; j < cols; ++j) {
+            std::vector<float> colApprox(rows / 2), colDetail(rows / 2), colOutput(rows);
+            for (int i = 0; i < rows / 2; ++i) {
+                colApprox[i] = transformed.at<float>(i, j);
+                colDetail[i] = transformed.at<float>(i + rows / 2, j);
+            }
+            // 1D inverse transform
+            inverse_wavelet_transfrom_1D(colOutput, colApprox, colDetail);
+            for (int i = 0; i < rows; ++i) {
+                intermediate.at<float>(i, j) = colOutput[i];
+            }
         }
-
-        inverse_wavelet_transfrom_1D(colOutput, colApprox, colDetail);
-
-        for (int i = 0; i < rows; ++i) {
-            intermediate.at<float>(i, j) = colOutput[i];
-        }
-    }
 
         // Apply inverse transform to rows
-    for (int i = 0; i < rows; ++i) {
-        std::vector<float> rowApprox(cols / 2), rowDetail(cols / 2), rowOutput(cols);
-        for (int j = 0; j < cols / 2; ++j) {
-            rowApprox[j] = intermediate.at<float>(i, j);
-            rowDetail[j] = intermediate.at<float>(i, j + cols / 2);
-        }
+        for (int i = 0; i < rows; ++i) {
+            std::vector<float> rowApprox(cols / 2), rowDetail(cols / 2), rowOutput(cols);
+            for (int j = 0; j < cols / 2; ++j) {
+                rowApprox[j] = intermediate.at<float>(i, j);
+                rowDetail[j] = intermediate.at<float>(i, j + cols / 2);
+            }
+            // 1D inverse transform
+            inverse_wavelet_transfrom_1D(rowOutput, rowApprox, rowDetail);
 
-        inverse_wavelet_transfrom_1D(rowOutput, rowApprox, rowDetail);
-
-        for (int j = 0; j < cols; ++j) {
-            image.at<float>(i, j) = rowOutput[j];
+            for (int j = 0; j < cols; ++j) {
+                transformed.at<float>(i, j) = rowOutput[j];
+            }
         }
+        l = l - 1;
     }
 
-    return image;
+    return transformed;
 
 } 
 
 int main()
 {
-    std::cout << "Testing the template\n";
+    
+    // Input parameters
 
+    // image path
     cv::Mat image = cv::imread("../docs/cameraman.png");
+    // Level : Level of wavelet transformation
+    // * level shouldn't be negative
+    // * level shouldn't allow 2^level > image rows or columns
+    int level = -2; 
 
+    // checking if the image is valid or not
     if (image.empty()){
         std::cerr << "Error : could not open the image" << std::endl;
     }
-
+    if (image.rows % 2 != 0 || image.cols % 2 != 0) {
+        throw std::runtime_error("Image dimensions must be even.");
+    }
     image.convertTo(image, CV_32F, 1.0 / 255.0);
-
     cv::imshow("Cameraman image", image);
 
-    cv::Mat LL, LH, HL, HH;
-    cv::Mat WaveTransform = wavelet_transform_2D(image, 3);
-
+    // Wavelet transformation
+    cv::Mat WaveTransform = wavelet_transform_2D(image, level);
     cv::imshow("After transformation", WaveTransform);
 
-    // cv::Mat recon = inverse_wavelet_transform_2D(WaveTransform);
-
-    // cv::imshow("Reconstructed image", recon);
+    // Inverse wavelet transformation
+    cv::Mat recon = inverse_wavelet_transform_2D(WaveTransform, level);
+    cv::imshow("Reconstructed image", recon);
 
     cv::waitKey(0);
     return 0;
