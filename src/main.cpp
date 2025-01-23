@@ -164,7 +164,7 @@ int main()
     cv::Mat image = cv::imread("../docs/cameraman.png");
     // Level : Level of wavelet transformation
     // * level shouldn't be negative
-    // * level shouldn't allow 2^level > image rows or columns
+    // * level shouldn't allow 2^level > number of image rows or columns
     int level = 2; 
 
     // checking if the image is valid or not
