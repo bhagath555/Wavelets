@@ -209,7 +209,7 @@ int main()
     // Level : Level of wavelet transformation
     // * level shouldn't be negative
     // * level shouldn't allow 2^level > image rows or columns
-    int level = -2; 
+    int level = 2; 
 
     // checking if the image is valid or not
     if (image.empty()){
