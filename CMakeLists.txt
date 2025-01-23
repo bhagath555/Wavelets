@@ -18,7 +18,7 @@ set(LOCAL_PROJECT_DESCRIPTION "Wavelet transformation of images")
 
 # Header files (relative to "include" directory)
 set(HEADERS
-    header.h
+    wavelet_transform.hpp
 )
 
 # Source files (relative to "src" directory)

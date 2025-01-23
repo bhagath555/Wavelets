@@ -78,5 +78,6 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/wsl.localhost/Ubuntu/home/bam/cg2/Wavelets"
 }
