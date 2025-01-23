@@ -28,3 +28,7 @@ make
 
 ## Wavelet transformation (level 2)
 ![Cameraman Image wavelet transform level 2](./docs/level_2.png)
+
+## Contributers
+Bhagath Mamidlapelly (127068)
+Abinav Sajeev (127009)
