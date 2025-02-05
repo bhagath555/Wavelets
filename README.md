@@ -5,8 +5,6 @@ This project contains C++ implementation of 2D wavelet transformation. Haar wave
 ## functions:
 * wavelet_transfrom_1D
 * wavelet_transform_2D
-* inverse_wavelet_transfrom_1D
-* inverse_wavelet_transform_2D
 
 ## Library requirements:
 * cmake
@@ -14,6 +12,9 @@ This project contains C++ implementation of 2D wavelet transformation. Haar wave
 
 ## How to run the code  
 In the project directory, use below commands to run the project.
+
+## Features
+Different wavelet functions are used in transformation and examples are presented in the main function.
 
 ```bash
 mkdir build
